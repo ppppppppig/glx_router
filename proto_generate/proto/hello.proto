@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package hello;
+
+// The request message containing the user's name.
+message HelloMsg {
+  int32 id = 1;
+  string msg = 2;
+}
+
+
+// The Greeter service definition.
+service HelloService {
+  // Server streaming RPC
+  rpc hello(stream HelloMsg) returns (stream HelloMsg);
+}

@@ -1,0 +1,2 @@
+/root/glx/glx_router/install/bin/client
+/root/glx/glx_router/install/bin/server
