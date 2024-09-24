@@ -3,6 +3,7 @@
 
 #include "utils.h"
 #include "acl/acl.h"
+#include "queue_manager/queue_manager.h"
 
 namespace GlxRouter {
 
@@ -56,9 +57,12 @@ public:
         std::cout << "nothing to control" << std::endl;
     }
     virtual std::shared_ptr<Queue::QueueData> Process(std::shared_ptr<Queue::QueueData>) = 0;
+
+    inline std::string InputName() { return input_que_; }
+    inline std::string OutputName() { return output_que_; }
 private:
-    std::vector<std::string> input_que_;
-    std::vector<std::string> output_que_;
+    std::string input_que_;
+    std::string output_que_;
 
     std::string model_type_;
     // std::string parallel_group_; // 同一并行组的Node，将使用同一个线程执行。不同并行组的Node，将使用不同线程执行，并且cuda stream也不一致。
@@ -66,39 +70,39 @@ private:
 
 class NodeRuntime {
 public:
-    virtual void Init(const std::string& input_que, const std::string& output_que, const std::string& model_type);
-    virtual void GetInputData(std::shared_ptr<Queue::QueueData>);
-    virtual void PutInputData(std::shared_ptr<Queue::QueueData>);
-    virtual void Process();
-private:
-    NodeRuntime() = delete;
+    NodeRuntime() {}
+    virtual void GetInputData(std::shared_ptr<Queue::QueueData>&) = 0;
+    virtual void PutOutputData(std::shared_ptr<Queue::QueueData>) = 0;
+    virtual void Process() = 0;
+
+protected:
     std::unique_ptr<Node> node_;
 };
 
 
-class ExecThread {
+// class ExecThread {
 
-public:
-    virtual void Init();
-    virtual void Release();
-    virtual void Control(); // 停止，启动
-    virtual void Process()
-public:
-    aclrtStream stream;
-    std::vector<NodeRuntime> node_runtime_list_;
-    std::thread thread_;
-    bool running_ = false;
-    int32_t deviceId = 0;
-};
+// public:
+//     virtual void Init();
+//     virtual void Release();
+//     virtual void Control(); // 停止，启动
+//     virtual void Process();
+// public:
+//     aclrtStream stream;
+//     std::vector<NodeRuntime> node_runtime_list_;
+//     std::thread thread_;
+//     bool running_ = false;
+//     int32_t deviceId = 0;
+// };
 
-class InferRuntime{
-public:
-    virtual void Init();
-    virtual void Release();
-    virtual void Control(); // 停止，启动
-    virtual void Process();
-private:
-    std::list<ExecThread> exec_list_;
-};
+// class InferRuntime{
+// public:
+//     virtual void Init();
+//     virtual void Release();
+//     virtual void Control(); // 停止，启动
+//     virtual void Process();
+// private:
+//     std::list<ExecThread> exec_list_;
+// };
 
 } // namespace GlxRouter

@@ -1,7 +1,12 @@
-#include "../proto_generate/hello.pb.h"
-#include "../proto_generate/hello.grpc.pb.h"
+#pragma once
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
+#include <boost/uuid/uuid.hpp> // 生成 UUID 所需
+#include <boost/uuid/uuid_generators.hpp> // 随机生成器
+#include <boost/uuid/uuid_io.hpp> // 支持输出 UUID
+
+#include "../proto_generate/hello.pb.h"
+#include "../proto_generate/hello.grpc.pb.h"
 
 using hello::HelloService;
 using hello::HelloMsg;

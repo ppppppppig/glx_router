@@ -13,10 +13,14 @@ find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED)
 
 find_package(Boost REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
+
+set(Acl_INCLUDE_DIRS "/usr/local/Ascend/ascend-toolkit/8.0.RC2/runtime/include/")
+set(Python_INCLUDE_DIRS "/usr/include/python3.8/")
+include_directories(${Boost_INCLUDE_DIRS} ${Acl_INCLUDE_DIRS} ${Python_INCLUDE_DIRS})
+
 add_library(tokenizer tokenizer.cpp)
 target_link_libraries(tokenizer PRIVATE pybind11::embed Python3::Python)
-target_link_libraries(tokenizer  tbb  ${Boost_LIBRARIES})
+target_link_libraries(tokenizer PRIVATE tbb ${Boost_LIBRARIES})
 
 add_executable(pybind11_example test_tokenizer.cpp)
 target_link_libraries(pybind11_example PRIVATE tokenizer)

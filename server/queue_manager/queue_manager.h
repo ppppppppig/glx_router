@@ -1,3 +1,5 @@
+#pragma once
+
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <cassert>
@@ -9,47 +11,53 @@ namespace Queue{
 
 class QueueData {
 public:
-    QeueueData(size_t stream_id): stream_id_(stream_id) {}
+    QueueData(const std::string& stream_id): stream_id_(stream_id) {}
 
     virtual void* GetData() = 0;
 
-    size_t GetStreamId() {
+    const std::string& GetStreamId() {
         return stream_id_;
     }
 private:
-    size_t stream_id_;
+    std::string stream_id_;
 };
 
-class ServerOutputQueueData: QueueData {
+class ServerOutputQueueData: public QueueData {
 public:
+    ServerOutputQueueData(const std::string& stream_id, const std::string& prompts)
+    : QueueData(stream_id), prompts_(prompts) {}
     void* GetData() override {
-        return static_cast<void*>(&prompts);   
+        return static_cast<void*>(&prompts_);   
     }
 
 private:
-    std::string prompts;
+    std::string prompts_;
 };
 
-using bound_queue = tbb::concurrent_bounded_queue<std::shared_ptr<QueueData>>();
+using bound_queue = tbb::concurrent_bounded_queue<std::shared_ptr<QueueData>>;
 
 class Queue {
 public:
-    ResponseTokenQueue() {
-        msgQueue_.set_capacity(MAX_QUEUE_SIZE);
+    Queue() {
+        queue_.set_capacity(MAX_QUEUE_SIZE);
     }
 
-    void Pop(std::shared_ptr<QueueData>& msg) {
+    inline void Pop(std::shared_ptr<QueueData>& msg) {
         queue_.pop(msg);
     }
 
     // Try to pop from the queue (non-blocking)
-    bool TryPop(std::shared_ptr<QueueData>& msg) {
+    inline bool TryPop(std::shared_ptr<QueueData>& msg) {
         return queue_.try_pop(msg);
     }
 
+    inline size_t Size() {
+        return queue_.size();
+    }
+
     // Push into the queue
-    void Push(std::shared_ptr<QueueData> msg) {
-        queue_.push(std::move(msg));
+    inline void Push(std::shared_ptr<QueueData> msg) {
+        queue_.push(msg);
     }
 
 private:
@@ -57,13 +65,13 @@ private:
     bound_queue queue_;
 };
 
-class QueueManger {
+class QueueManager {
 public:
     void AddQueue(const std::string& que_name) {
-        str_to_que_.emplace(que_name, bound_queue());
+        str_to_que_.emplace(que_name, Queue());
     }
 
-    bound_queue GetQue(const std::string& que_name) {
+    Queue& GetQueue(const std::string& que_name) {
         auto iter = str_to_que_.find(que_name);
         if (iter != str_to_que_.end()) {
             return iter->second;
@@ -72,7 +80,7 @@ public:
     }
 
 private:
-    std::map<std::string, bound_queue> str_to_que_; // 只在初始化时构造该map，后续不会再更新或写，所以使用非并发map即可
+    std::map<std::string, Queue> str_to_que_; // 只在初始化时构造该map，后续不会再更新或写，所以使用非并发map即可
 };
 
 } // namespace Queue
