@@ -9,7 +9,6 @@ TokenizerNode::TokenizerNode(const std::string& input_que, const std::string& ou
         try {
             py::module sys = py::module::import("sys");
             sys.attr("path").attr("append")("..");  // 添加上一级目录
-
             py::module tokenizer_module = py::module::import("router_llama");
             py::object tokenizer_class = tokenizer_module.attr("Internlm2Tokenizer");
             tokenizer_instance_ = tokenizer_class();
@@ -42,9 +41,41 @@ std::shared_ptr<Queue::QueueData> TokenizerNode::Process(std::shared_ptr<Queue::
 
 void TokenizerNodeRuntime::Process() {
     std::shared_ptr<Queue::QueueData> input_data_ptr;
-    GetInputData(input_data_ptr);
+    bool is_get_data = GetInputData(input_data_ptr);
+    if (!is_get_data) {
+        return;
+    }
     auto output_data_ptr = node_->Process(input_data_ptr);
     PutOutputData(output_data_ptr);
+}
+
+void TokenizerExecThread::Control() {
+    // 只能停止
+    running_ = false;
+    if (thread_.joinable()) {
+        thread_.join();
+    }
+}
+
+void TokenizerExecThread::Process() {
+    if (!running_) {
+        return;
+    }
+    node_runtime_->Process();
+}
+
+void TokenizerExecThread::ThreadFun() {
+
+    while (running_) {
+        Process();
+    }
+    running_ = false;
+}
+
+void TokenizerExecThread::InitThread() {
+    running_ = true;
+    thread_ = std::thread(&TokenizerExecThread::ThreadFun, this);
+
 }
 
 } // namespace NodeSpace

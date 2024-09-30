@@ -47,7 +47,7 @@ private:
     GrpcStreamClientInstance* grpcStreamClientInstance;
 };
 
-const static std::string server_address("127.0.0.1:8860");
+const static std::string server_address("127.0.0.1:3006");
 class GrpcStreamClientInterface {
 public:
     virtual void connected(bool ok) = 0; //接入服务器成功或者失败

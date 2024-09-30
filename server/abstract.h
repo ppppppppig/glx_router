@@ -2,7 +2,6 @@
 #include <memory>
 
 #include "utils.h"
-#include "acl/acl.h"
 #include "queue_manager/queue_manager.h"
 
 namespace GlxRouter {
@@ -71,7 +70,7 @@ private:
 class NodeRuntime {
 public:
     NodeRuntime() {}
-    virtual void GetInputData(std::shared_ptr<Queue::QueueData>&) = 0;
+    virtual bool GetInputData(std::shared_ptr<Queue::QueueData>&) = 0;
     virtual void PutOutputData(std::shared_ptr<Queue::QueueData>) = 0;
     virtual void Process() = 0;
 
@@ -80,20 +79,13 @@ protected:
 };
 
 
-// class ExecThread {
+class ExecThread {
 
-// public:
-//     virtual void Init();
-//     virtual void Release();
-//     virtual void Control(); // 停止，启动
-//     virtual void Process();
-// public:
-//     aclrtStream stream;
-//     std::vector<NodeRuntime> node_runtime_list_;
-//     std::thread thread_;
-//     bool running_ = false;
-//     int32_t deviceId = 0;
-// };
+public:
+    virtual void Control() = 0; // 停止，启动
+    virtual void Process() = 0;
+    virtual void InitThread() = 0;
+};
 
 // class InferRuntime{
 // public:

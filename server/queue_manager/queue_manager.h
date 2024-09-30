@@ -3,8 +3,13 @@
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <cassert>
+#include <iostream>
+#include <thread>
+#include <map>
 
 #include "../utils.h"
+
+class GrpcStreamServerInstance;
 
 namespace GlxRouter {
 namespace Queue{
@@ -34,6 +39,8 @@ private:
     std::string prompts_;
 };
 
+
+
 using bound_queue = tbb::concurrent_bounded_queue<std::shared_ptr<QueueData>>;
 
 class Queue {
@@ -43,6 +50,8 @@ public:
     }
 
     inline void Pop(std::shared_ptr<QueueData>& msg) {
+        std::cout << "queue size" << Size() << std::endl;
+        // std::cout << "New thread ID: " << std::this_thread::get_id() << std::endl;
         queue_.pop(msg);
     }
 
@@ -79,8 +88,36 @@ public:
         assert(1 == 0); // 永远不应该走到这里来
     }
 
+    void erase(const std::string& que_name) {
+        str_to_que_.erase(que_name);
+    }
+
 private:
     std::map<std::string, Queue> str_to_que_; // 只在初始化时构造该map，后续不会再更新或写，所以使用非并发map即可
+};
+
+class StreamManager {
+public:
+    StreamManager(): stream_maps_() {}
+
+    void AddStream(const std::string& stream_id, GrpcStreamServerInstance* stream) {
+        stream_maps_.emplace(stream_id, stream);
+    }
+
+    GrpcStreamServerInstance* GetStream(const std::string& stream_id) {
+        auto iter = stream_maps_.find(stream_id);
+        if (iter != stream_maps_.end()) {
+            return iter->second;
+        }
+        assert(1 == 0); // 永远不应该走到这里来
+    }
+
+    void erase(const std::string& stream_id) {
+        stream_maps_.erase(stream_id);
+    }
+
+private:
+    std::map<std::string, GrpcStreamServerInstance*> stream_maps_;
 };
 
 } // namespace Queue
