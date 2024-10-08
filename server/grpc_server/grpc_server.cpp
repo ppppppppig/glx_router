@@ -1,5 +1,8 @@
-#include "grpc_server.h"
+#include <vector>
 
+#include "grpc_server.h"
+#include "../queue_manager/queue_manager.h"
+using namespace GlxRouter;
 
 void GrpcStreamServerReceThread::ThreadFun() {
     try{
@@ -27,6 +30,45 @@ void GrpcStreamServerReceThread::InitThread() {
 }
 
 void GrpcStreamServerReceThread::Control() {
+    // 只能停止
+    running_ = false;
+    if (thread_.joinable()) {
+        thread_.join();
+    }
+}
+
+void GrpcStreamServerPushThread::ThreadFun() {
+    try{
+        while (running_) {
+            std::shared_ptr<Queue::QueueData> input_data_ptr;
+            bool is_get_data = Singleton<Queue::QueueManager>::Get().GetQueue(input_que_name_).TryPop(input_data_ptr);
+            if (!is_get_data) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                std::cout << "queue " << input_que_name_ << " has no data." << std::endl;
+            } else {
+                auto ve_ptr = static_cast<std::vector<int>*>(input_data_ptr->GetData());
+                std::cout << "get data: stream_id=" << input_data_ptr->GetStreamId() << " data size is : " << ve_ptr->size() << std::endl;
+                for (int i =0; i < ve_ptr->size(); i++) {
+                    std::cout << (*ve_ptr)[i] << " ";
+                }
+                HelloMsg temp;
+                temp.set_id(1);
+                temp.set_msg("traverse");
+                Singleton<Queue::StreamManager>::Get().GetStream(input_data_ptr->GetStreamId())->AsycSendMsg(temp);
+                std::cout << "get data" << std::endl;
+            }
+        }
+    } catch(const std::exception& e) {        
+        std::cout << e.what() << std::endl;   
+    }
+}
+
+void GrpcStreamServerPushThread::InitThread() {
+    running_ = true;
+    thread_ = std::thread(&GrpcStreamServerPushThread::ThreadFun, this);
+}
+
+void GrpcStreamServerPushThread::Control() {
     // 只能停止
     running_ = false;
     if (thread_.joinable()) {

@@ -53,7 +53,6 @@ public:
 };
 
 inline bool TokenizerNodeRuntime::GetInputData(std::shared_ptr<Queue::QueueData>& input_data_ptr) {
-    std::cout << "input_name: " << node_->InputName() << std::endl;
     bool is_get_data = Singleton<Queue::QueueManager>::Get().GetQueue(node_->InputName()).TryPop(input_data_ptr);
     if (!is_get_data) {
         return false;

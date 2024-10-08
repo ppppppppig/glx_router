@@ -7,8 +7,8 @@
 using namespace GlxRouter::Queue;
 
 //GrpcStreamServerInstance不需要其它线程交互，故不需要互斥锁
-GrpcStreamServerInstance::GrpcStreamServerInstance(AsyncService* inputService, std::shared_ptr<grpc::ServerCompletionQueue> inputCq)
-: service_(inputService), cq_(inputCq), stream_(&server_context_)
+GrpcStreamServerInstance::GrpcStreamServerInstance(AsyncService* inputService, std::shared_ptr<grpc::ServerCompletionQueue> inputCq, const std::string& output_que)
+: service_(inputService), cq_(inputCq), stream_(&server_context_), output_que_name_(output_que)
 {
 
     //使用std::bind绑定对象和类对象函数得到一个函数指针
@@ -29,14 +29,14 @@ void GrpcStreamServerInstance::Connected(bool ok){
     //新建一个GrpcStreamServerInstance，一个client的grpc链接就对应一个GrpcStreamServerInstance实例
     stream_.Read(&input_msg_, &read_done_func_);
     //新的GrpcStreamServerInstance，会在构造函数中调用service->Requesthello()来绑定新链接
-    new GrpcStreamServerInstance(service_, cq_);
+    new GrpcStreamServerInstance(service_, cq_, output_que_name_);
     //新加入的stream对应的GrpcStreamServerInstance会被加入到GrpcStreamServerInstanceSet中，用于发送消息或者统计stream链接。
 
     boost::uuids::uuid uuid = boost::uuids::random_generator()();
-    std::string stream_id = boost::uuids::to_string(uuid);
-    Singleton<StreamManager>::Get().AddStream(stream_id, this);
+    stream_id_ = boost::uuids::to_string(uuid);
+    Singleton<StreamManager>::Get().AddStream(stream_id_, this);
 
-    std::cout << " 当前streamID为: " << stream_id << std::endl;  
+    std::cout << " 当前streamID为: " << stream_id_ << std::endl;  
 }   
 
 void GrpcStreamServerInstance::ReadDone(bool ok){
@@ -46,6 +46,7 @@ void GrpcStreamServerInstance::ReadDone(bool ok){
         }
         std::cout << "收到消息1111,id为"<< input_msg_.id() <<",msg为" << input_msg_.msg()  << " 当前消息的streamId为： " << stream_id_ << std::endl;  
         // singResponseTokenQue.push(Task{stream_id_, input_msg_});
+        Singleton<QueueManager>::Get().GetQueue(output_que_name_).Push(std::make_shared<ServerOutputQueueData>(stream_id_, input_msg_.msg()));
         stream_.Read(&input_msg_, &read_done_func_); // 这是个流式接口，需要再次调用，监听read事件
     }catch(const std::exception& e){
         std::cout << e.what() << std::endl;

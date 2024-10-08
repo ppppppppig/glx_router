@@ -35,7 +35,7 @@ class GrpcStreamServerInstance {
 private:
    
 public:
-    GrpcStreamServerInstance(AsyncService* service, std::shared_ptr<grpc::ServerCompletionQueue> inputCq);
+    GrpcStreamServerInstance(AsyncService* service, std::shared_ptr<grpc::ServerCompletionQueue> inputCq, const std::string& output_que);
     ~GrpcStreamServerInstance(){};
     void Connected(bool ok);
     void ReadDone(bool ok);
@@ -54,5 +54,6 @@ private:
     EventHandler disconnect_func_;                                  // stream断开时触发
     HelloMsg input_msg_;                                            // inputMsg用来接收消息，用stream.Read()中绑定
     bool on_write_;                                                 // 判断是否要添加一个写事件
-    std::queue<HelloMsg> write_buffer_;                      
+    std::queue<HelloMsg> write_buffer_;      
+    std::string output_que_name_;                
 };

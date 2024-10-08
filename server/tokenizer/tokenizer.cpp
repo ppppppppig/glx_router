@@ -1,4 +1,5 @@
 #include <cassert>
+#include <pthread.h>
 
 #include "tokenizer.h"
 namespace GlxRouter {
@@ -8,7 +9,7 @@ TokenizerNode::TokenizerNode(const std::string& input_que, const std::string& ou
     Node(input_que, output_que, model_type), guard_()  {
         try {
             py::module sys = py::module::import("sys");
-            sys.attr("path").attr("append")("..");  // 添加上一级目录
+            sys.attr("path").attr("append")("/root/glx/glx_router/server/tokenizer");  // 添加上一级目录
             py::module tokenizer_module = py::module::import("router_llama");
             py::object tokenizer_class = tokenizer_module.attr("Internlm2Tokenizer");
             tokenizer_instance_ = tokenizer_class();
@@ -65,7 +66,8 @@ void TokenizerExecThread::Process() {
 }
 
 void TokenizerExecThread::ThreadFun() {
-
+    pid_t lwpId = syscall(SYS_gettid); // 获取线程 ID
+    std::cout << "Thread LWP ID: " << lwpId << std::endl;
     while (running_) {
         Process();
     }

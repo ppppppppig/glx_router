@@ -20,8 +20,9 @@ include_directories(/usr/local/include)
 
 # 添加grpc_server
 add_subdirectory(../server/grpc_server "${CMAKE_BINARY_DIR}/grpc_server_build")
+add_subdirectory(../server/tokenizer "${CMAKE_BINARY_DIR}/tokenizer_build")
 add_executable(test_grpc test_grpc.cpp)
-target_link_libraries(test_grpc PRIVATE grpc_server)
+target_link_libraries(test_grpc PRIVATE grpc_server tokenizer)
 
 # add_library(tokenizer tokenizer.cpp)
 # target_link_libraries(tokenizer PRIVATE pybind11::embed Python3::Python)

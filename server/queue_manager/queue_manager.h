@@ -85,6 +85,7 @@ public:
         if (iter != str_to_que_.end()) {
             return iter->second;
         }
+        std::cout << "get que que name: " << que_name << std::endl;
         assert(1 == 0); // 永远不应该走到这里来
     }
 
@@ -101,6 +102,11 @@ public:
     StreamManager(): stream_maps_() {}
 
     void AddStream(const std::string& stream_id, GrpcStreamServerInstance* stream) {
+        auto iter = stream_maps_.find(stream_id);
+        if (iter != stream_maps_.end()) {
+            std::cerr << "stream_maps has this stream id, no need add" << std::endl;
+            return;
+        }
         stream_maps_.emplace(stream_id, stream);
     }
 
